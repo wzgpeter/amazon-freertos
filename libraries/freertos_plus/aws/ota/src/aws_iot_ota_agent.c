@@ -68,15 +68,10 @@
 #define OTA_ERASED_BLOCKS_VAL              0xffU            /* The starting state of a group of erased blocks in the Rx block bitmap. */
 #define OTA_MAX_FILES                      1U               /* [MUST REMAIN 1! Future support.] Maximum number of concurrent OTA files. */
 #define OTA_NUM_MSG_Q_ENTRIES              2U               /* Maximum number of entries in the OTA message queue. */
-#define OTA_SUBSCRIBE_WAIT_MS              30000UL
-#define OTA_UNSUBSCRIBE_WAIT_MS            1000UL
-#define OTA_PUBLISH_WAIT_MS                10000UL
 #define OTA_SUBSCRIBE_WAIT_TICKS           pdMS_TO_TICKS( OTA_SUBSCRIBE_WAIT_MS )
 #define OTA_UNSUBSCRIBE_WAIT_TICKS         pdMS_TO_TICKS( OTA_UNSUBSCRIBE_WAIT_MS )
 #define OTA_PUBLISH_WAIT_TICKS             pdMS_TO_TICKS( OTA_SUBSCRIBE_WAIT_TICKS )
 #define OTA_MAX_STREAM_REQUEST_MOMENTUM    32U              /* Max number of stream requests allowed without a response before we abort. */
-#define OTA_MAX_PUBLISH_RETRIES            3                /* Max number of publish retries */
-#define OTA_RETRY_DELAY_MS                 1000UL           /* Delay between publish retries */
 #define U32_MAX_PLACES                     10U              /* Maximum number of output digits of an unsigned long value. */
 
 /* OTA Agent task event flags. */

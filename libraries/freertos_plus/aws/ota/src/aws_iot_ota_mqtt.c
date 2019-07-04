@@ -25,3 +25,44 @@
 
 /* MQTT includes. */
 #include "iot_mqtt.h"
+
+#define OTA_MAX_PUBLISH_RETRIES            3                /* Max number of publish retries */
+#define OTA_PUBLISH_RETRY_DELAY_MS         1000UL           /* Delay between publish retries */
+#define OTA_SUBSCRIBE_WAIT_MS              30000UL
+#define OTA_UNSUBSCRIBE_WAIT_MS            1000UL
+#define OTA_PUBLISH_WAIT_MS                10000UL
+
+/* Publish a message using the platforms PubSub mechanism. */
+
+static IotMqttError_t _OTAPublishMessage( void * pvClient,
+                                            const char * const pacTopic,
+                                            uint16_t usTopicLen,
+                                            char * pcMsg,
+                                            uint32_t ulMsgSize,
+                                            IotMqttQos_t eQOS );
+
+/* Publish a message to the specified client/topic at the given QOS. */
+
+static IotMqttError_t _OTAPublishMessage( void * const pvClient,
+                                            const char * const pacTopic,
+                                            uint16_t usTopicLen,
+                                            char * pcMsg,
+                                            uint32_t ulMsgSize,
+                                            IotMqttQos_t eQOS )
+{
+    IotMqttError_t eResult;
+    IotMqttPublishInfo_t xPublishParams;
+
+    xPublishParams.pTopicName = ( const char * ) pacTopic;
+    xPublishParams.topicNameLength = usTopicLen;
+    xPublishParams.qos = eQOS;
+    xPublishParams.pPayload = pcMsg;
+    xPublishParams.payloadLength = ulMsgSize;
+    xPublishParams.retryLimit = OTA_MAX_PUBLISH_RETRIES;
+    xPublishParams.retryMs = OTA_PUBLISH_RETRY_DELAY_MS;
+    xPublishParams.retain = false;
+
+    eResult = IotMqtt_TimedPublish( pvClient, &xPublishParams, 0, OTA_PUBLISH_WAIT_MS );
+
+    return eResult;
+}
