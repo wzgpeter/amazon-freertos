@@ -87,11 +87,6 @@
 #define OTA_MAX_BLOCK_BITMAP_SIZE    128U               /* Max allowed number of bytes to track all blocks of an OTA file. Adjust block size if more range is needed. */
 #define OTA_REQUEST_MSG_MAX_SIZE     ( 3U * OTA_MAX_BLOCK_BITMAP_SIZE )
 
-/* Agent to Job Service status message constants. */
-
-#define OTA_STATUS_MSG_MAX_SIZE        128U             /* Max length of a job status message to the service. */
-#define OTA_UPDATE_STATUS_FREQUENCY    64U              /* Update the job status every 64 unique blocks received. */
-
 /* Job document parser constants. */
 
 #define OTA_MAX_JSON_TOKENS    64U                      /* Number of JSON tokens supported in a single parser call. */
@@ -133,49 +128,6 @@ typedef struct
 /* We need the following string to match in a couple places in the code so use a #define. */
 #define OTA_JSON_UPDATED_BY_KEY    "updatedBy"
 
-static const char pcOTA_JSON_ClientTokenKey[] = "clientToken";
-static const char pcOTA_JSON_ExecutionKey[] = "execution";
-static const char pcOTA_JSON_JobIDKey[] = "jobId";
-static const char pcOTA_JSON_StatusDetailsKey[] = "statusDetails";
-static const char pcOTA_JSON_SelfTestKey[] = "self_test";
-static const char pcOTA_JSON_UpdatedByKey[] = OTA_JSON_UPDATED_BY_KEY;
-static const char pcOTA_JSON_JobDocKey[] = "jobDocument";
-static const char pcOTA_JSON_OTAUnitKey[] = "afr_ota";
-static const char pcOTA_JSON_FileGroupKey[] = "files";
-static const char pcOTA_JSON_StreamNameKey[] = "streamname";
-static const char pcOTA_JSON_FilePathKey[] = "filepath";
-static const char pcOTA_JSON_FileSizeKey[] = "filesize";
-static const char pcOTA_JSON_FileIDKey[] = "fileid";
-static const char pcOTA_JSON_FileAttributeKey[] = "attr";
-static const char pcOTA_JSON_FileCertNameKey[] = "certfile";
-
-enum
-{
-    eJobReason_Receiving = 0,  /* Update progress status. */
-    eJobReason_SigCheckPassed, /* Set status details to Self Test Ready. */
-    eJobReason_SelfTestActive, /* Set status details to Self Test Active. */
-    eJobReason_Accepted,       /* Set job state to Succeeded. */
-    eJobReason_Rejected,       /* Set job state to Failed. */
-    eJobReason_Aborted,        /* Set job state to Failed. */
-    eNumJobReasons
-};
-
-/* These are the associated statusDetails 'reason' codes that go along with
- * the above enums during the OTA update process. The 'Receiving' state is
- * updated with transfer progress as #blocks received of #total.
- */
-static const char * pcOTA_JobReason_Strings[ eNumJobReasons ] = { "", "ready", "active", "accepted", "rejected", "aborted" };
-
-/*lint -esym(749,OTA_JobStatus_t::eJobStatus_Rejected) Until the Job Service supports it, this is unused. */
-typedef enum
-{
-    eJobStatus_InProgress = 0,
-    eJobStatus_Failed,
-    eJobStatus_Succeeded,
-    eJobStatus_Rejected,      /* Not possible today using the "get next job" feature. FUTURE! */
-    eJobStatus_FailedWithVal, /* This shows 2 numeric reason codes. */
-    eNumJobStatusMappings
-} OTA_JobStatus_t;
 
 /* We map all of the above status cases to one of these 4 status strings.
  * These are the only strings that are supported by the Job Service. You
@@ -186,15 +138,6 @@ static const char pcOTA_String_InProgress[] = "IN_PROGRESS";
 static const char pcOTA_String_Failed[] = "FAILED";
 static const char pcOTA_String_Succeeded[] = "SUCCEEDED";
 static const char pcOTA_String_Rejected[] = "REJECTED";
-
-static const char * pcOTA_JobStatus_Strings[ eNumJobStatusMappings ] =
-{
-    pcOTA_String_InProgress,
-    pcOTA_String_Failed,
-    pcOTA_String_Succeeded,
-    pcOTA_String_Rejected,
-    pcOTA_String_Failed,                        /* eJobStatus_FailedWithVal */
-};
 
 
 #define OTA_DOC_MODEL_MAX_PARAMS    32U                    /* The parameter list is backed by a 32 bit longword bitmap by design. */
@@ -318,12 +261,6 @@ static OTA_FileContext_t * prvParseJobDoc( const char * pcJSON,
 
 static bool_t prvOTA_Close( OTA_FileContext_t * const C );
 
-/* Update the job status topic with our progress of the OTA transfer. */
-
-static void prvUpdateJobStatus( OTA_FileContext_t * C,
-                                OTA_JobStatus_t eStatus,
-                                int32_t lReason,
-                                int32_t lSubReason );
 
 /* Construct the "Get Stream" message and publish it to the stream service request topic. */
 

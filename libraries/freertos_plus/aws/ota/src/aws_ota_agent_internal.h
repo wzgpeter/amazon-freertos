@@ -40,6 +40,34 @@
 #define OTA_FILE_BLOCK_SIZE    ( 1UL << otaconfigLOG2_FILE_BLOCK_SIZE ) /* Data section size of the file data block message (excludes the header). */
 #define OTA_DATA_BLOCK_SIZE    ((1<<otaconfigLOG2_FILE_BLOCK_SIZE) + 30) /* header is 19 bytes .*/
 
+#define OTA_MAX_TOPIC_LEN                  256U         /* Max length of a dynamically generated topic string (usually on the stack). */
+
+ /* Agent to Job Service status message constants. */
+#define OTA_STATUS_MSG_MAX_SIZE        128U             /* Max length of a job status message to the service. */
+#define OTA_UPDATE_STATUS_FREQUENCY    64U              /* Update the job status every 64 unique blocks received. */
+
+static const char pcOTA_JSON_ClientTokenKey[] = "clientToken";
+static const char pcOTA_JSON_ExecutionKey[] = "execution";
+static const char pcOTA_JSON_JobIDKey[] = "jobId";
+static const char pcOTA_JSON_StatusDetailsKey[] = "statusDetails";
+static const char pcOTA_JSON_SelfTestKey[] = "self_test";
+static const char pcOTA_JSON_UpdatedByKey[] = OTA_JSON_UPDATED_BY_KEY;
+static const char pcOTA_JSON_JobDocKey[] = "jobDocument";
+static const char pcOTA_JSON_OTAUnitKey[] = "afr_ota";
+static const char pcOTA_JSON_FileGroupKey[] = "files";
+static const char pcOTA_JSON_StreamNameKey[] = "streamname";
+static const char pcOTA_JSON_FilePathKey[] = "filepath";
+static const char pcOTA_JSON_FileSizeKey[] = "filesize";
+static const char pcOTA_JSON_FileIDKey[] = "fileid";
+static const char pcOTA_JSON_FileAttributeKey[] = "attr";
+static const char pcOTA_JSON_FileCertNameKey[] = "certfile";
+
+/* These are the associated statusDetails 'reason' codes that go along with
+ * the above enums during the OTA update process. The 'Receiving' state is
+ * updated with transfer progress as #blocks received of #total.
+ */
+static const char* pcOTA_JobReason_Strings[eNumJobReasons] = { "", "ready", "active", "accepted", "rejected", "aborted" };
+
 typedef enum
 {
     eIngest_Result_FileComplete = -1,       /* The file transfer is complete and the signature check passed. */
@@ -140,5 +168,36 @@ typedef struct
     uint32_t ulParamsReceivedBitmap;   /* Bitmap of the parameters received based on the model. */
     uint32_t ulParamsRequiredBitmap;   /* Bitmap of the parameters required from the model. */
 } JSON_DocModel_t;
+
+/*lint -esym(749,OTA_JobStatus_t::eJobStatus_Rejected) Until the Job Service supports it, this is unused. */
+typedef enum
+{
+	eJobStatus_InProgress = 0,
+	eJobStatus_Failed,
+	eJobStatus_Succeeded,
+	eJobStatus_Rejected,      /* Not possible today using the "get next job" feature. FUTURE! */
+	eJobStatus_FailedWithVal, /* This shows 2 numeric reason codes. */
+	eNumJobStatusMappings
+} OTA_JobStatus_t;
+
+enum
+{
+	eJobReason_Receiving = 0,  /* Update progress status. */
+	eJobReason_SigCheckPassed, /* Set status details to Self Test Ready. */
+	eJobReason_SelfTestActive, /* Set status details to Self Test Active. */
+	eJobReason_Accepted,       /* Set job state to Succeeded. */
+	eJobReason_Rejected,       /* Set job state to Failed. */
+	eJobReason_Aborted,        /* Set job state to Failed. */
+	eNumJobReasons
+};
+
+static const char* pcOTA_JobStatus_Strings[eNumJobStatusMappings] =
+{
+	pcOTA_String_InProgress,
+	pcOTA_String_Failed,
+	pcOTA_String_Succeeded,
+	pcOTA_String_Rejected,
+	pcOTA_String_Failed,       /* eJobStatus_FailedWithVal */
+};
 
 #endif /* ifndef _AWS_OTA_AGENT_INTERNAL_H_ */
