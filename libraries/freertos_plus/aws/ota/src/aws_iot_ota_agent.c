@@ -95,7 +95,7 @@
 /* Job document parser constants. */
 
 #define OTA_MAX_JSON_TOKENS    64U                      /* Number of JSON tokens supported in a single parser call. */
-#define OTA_MAX_TOPIC_LEN      256U                     /* Max length of a dynamically generated topic string (usually on the stack). */
+
 
 /* When subscribing to MQTT topics with a callback handler, we use the callback
  * context variable as a subscription type to expedite dispatch of the published
@@ -234,24 +234,6 @@ typedef enum
 } OTA_JobParseErr_t;
 
 
-/*lint -e830 -e9003 Keep these in one location for easy discovery should they change in the future. */
-/* Topic strings used by the OTA process. */
-/* These first few are topic extensions to the dynamic base topic that includes the Thing name. */
-static const char pcOTA_JobsGetNextAccepted_TopicTemplate[] = "$aws/things/%s/jobs/$next/get/accepted";
-static const char pcOTA_JobsNotifyNext_TopicTemplate[] = "$aws/things/%s/jobs/notify-next";
-static const char pcOTA_JobsGetNext_TopicTemplate[] = "$aws/things/%s/jobs/$next/get";
-static const char pcOTA_JobStatus_TopicTemplate[] = "$aws/things/%s/jobs/%s/update";
-static const char pcOTA_StreamData_TopicTemplate[] = "$aws/things/%s/streams/%s/data/cbor";
-static const char pcOTA_GetStream_TopicTemplate[] = "$aws/things/%s/streams/%s/get/cbor";
-static const char pcOTA_GetNextJob_MsgTemplate[] = "{\"clientToken\":\"%u:%s\"}";
-static const char pcOTA_JobStatus_StatusTemplate[] = "{\"status\":\"%s\",\"statusDetails\":{";
-static const char pcOTA_JobStatus_ReceiveDetailsTemplate[] = "\"%s\":\"%u/%u\"}}";
-static const char pcOTA_JobStatus_SelfTestDetailsTemplate[] = "\"%s\":\"%s\",\"" OTA_JSON_UPDATED_BY_KEY "\":\"0x%x\"}}";
-static const char pcOTA_JobStatus_ReasonStrTemplate[] = "\"reason\":\"%s: 0x%08x\"}}";
-static const char pcOTA_JobStatus_SucceededStrTemplate[] = "\"reason\":\"%s v%u.%u.%u\"}}";
-static const char pcOTA_JobStatus_ReasonValTemplate[] = "\"reason\":\"0x%08x: 0x%08x\"}}";
-static const char pcOTA_String_Receive[] = "receive";
-
 /* Array containing pointer to the OTA publish buffers. They are used to Queue the pointers from the callback to the main task. */
 static OTA_PubMsg_t * xQueueData[ OTA_NUM_MSG_Q_ENTRIES ];
 
@@ -300,17 +282,11 @@ static void prvSelfTestTimer_Callback( TimerHandle_t T );
 
 static bool_t prvSubscribeToJobNotificationTopics( void );
 
-/* UnSubscribe from the jobs notification topic. */
-
-static void prvUnSubscribeFromJobNotificationTopic( void );
 
 /* Subscribe to the firmware update receive topic. */
 
 static bool_t prvSubscribeToDataStream( OTA_FileContext_t * C );
 
-/* UnSubscribe from the firmware update receive topic. */
-
-static bool_t prvUnSubscribeFromDataStream( OTA_FileContext_t * C );
 
 /* Publish a message using the platforms PubSub mechanism. */
 
