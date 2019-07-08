@@ -55,6 +55,11 @@ static const char pcOTA_JobStatus_SucceededStrTemplate[] = "\"reason\":\"%s v%u.
 static const char pcOTA_JobStatus_ReasonValTemplate[] = "\"reason\":\"0x%08x: 0x%08x\"}}";
 static const char pcOTA_String_Receive[] = "receive";
 
+/* Called when a MQTT message is received on an OTA agent topic of interest. */
+
+static void prvOTAPublishCallback(void* pvCallbackContext,
+	                              IotMqttCallbackParam_t* const pxPublishData);
+
 /* Subscribe to the jobs notification topic (i.e. New file version available). */
 
 static BaseType_t prvSubscribeToJobNotificationTopics(void);
@@ -79,6 +84,72 @@ static IotMqttError_t prvPublishMessage( void * pvClient,
                                          char * pcMsg,
                                          uint32_t ulMsgSize,
                                          IotMqttQos_t eQOS );
+
+
+/* This function is called whenever we receive a MQTT publish message on one of our OTA topics. */
+
+static void prvOTAPublishCallback(void* pvCallbackContext,
+	                              IotMqttCallbackParam_t* const pxPublishData)
+{
+	DEFINE_OTA_METHOD_NAME_L2("prvOTAPublishCallback");
+
+	BaseType_t xReturn;
+	OTA_PubMsg_t* pxMsg;
+
+	if (pxPublishData->u.message.info.payloadLength > OTA_DATA_BLOCK_SIZE)
+	{
+		OTA_LOG_L1("Error: buffers are too small %d to contains the payload %d.\r\n", OTA_DATA_BLOCK_SIZE, pxPublishData->u.message.info.payloadLength);
+		return;
+	}
+	/* If we're running the OTA task, send publish messages to it for processing. */
+	if (xOTA_Agent.xOTA_EventFlags != NULL)
+	{
+		xOTA_Agent.xStatistics.ulOTA_PacketsReceived++;
+
+		/* Lock up a buffer to copy publish data. */
+		pxMsg = prvOTAPubMessageGet();
+
+		if (pxMsg != NULL)
+		{
+			pxMsg->lMsgType = (int32_t)pvCallbackContext; /*lint !e923 The context variable is actually the message type. */
+			pxMsg->pxPubData.ulDataLength = pxPublishData->u.message.info.payloadLength;
+			if ((int32_t)pvCallbackContext == eOTA_PubMsgType_Stream) {
+				OTA_LOG_L2("[%s] Stream Received.\r\n", OTA_METHOD_NAME);
+			}
+
+
+			memcpy(pxMsg->pxPubData.vData, pxPublishData->u.message.info.pPayload, pxMsg->pxPubData.ulDataLength);
+			xReturn = xQueueSendToBack(xOTA_Agent.xOTA_MsgQ, &pxMsg, (TickType_t)0);
+			if (xReturn == pdPASS)
+			{
+				xOTA_Agent.xStatistics.ulOTA_PacketsQueued++;
+				(void)xEventGroupSetBits(xOTA_Agent.xOTA_EventFlags, OTA_EVT_MASK_MSG_READY);
+				/* Take ownership of the MQTT buffer. */
+			}
+			else
+			{
+				OTA_LOG_L1("Error: Could not push message to queue.\r\n");
+				/* Free up locked buffer. */
+				prvOTAPubMessageFree(pxMsg);
+				xOTA_Agent.xStatistics.ulOTA_PacketsDropped++;
+			}
+		}
+		else
+		{
+			xOTA_Agent.xStatistics.ulOTA_PacketsDropped++;
+			OTA_LOG_L1("Error: Could not get a free buffer to copy callback data.\r\n");
+		}
+	}
+	else
+	{
+		/* This doesn't normally occur unless we're subscribed to an OTA topic when
+		 * the OTA agent is not initialized. Just drop the message by not taking
+		 * ownership since we don't know if we'll ever be able to process it. */
+		OTA_LOG_L2("[%s] Warning: Received MQTT message but agent isn't ready.\r\n", OTA_METHOD_NAME);
+		xOTA_Agent.xStatistics.ulOTA_PacketsDropped++;
+	}
+}
+
 
 /* Subscribe to the OTA job notification topics. */
 

@@ -38,6 +38,7 @@
 #define LOG2_BITS_PER_BYTE     3UL                                      /* Log base 2 of bits per byte. */
 #define BITS_PER_BYTE          ( 1UL << LOG2_BITS_PER_BYTE )            /* Number of bits in a byte. This is used by the block bitmap implementation. */
 #define OTA_FILE_BLOCK_SIZE    ( 1UL << otaconfigLOG2_FILE_BLOCK_SIZE ) /* Data section size of the file data block message (excludes the header). */
+#define OTA_DATA_BLOCK_SIZE    ((1<<otaconfigLOG2_FILE_BLOCK_SIZE) + 30) /* header is 19 bytes .*/
 
 typedef enum
 {
