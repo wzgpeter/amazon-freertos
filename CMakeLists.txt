@@ -5,6 +5,9 @@ project(amazon-freertos VERSION 1.4.7)
 # Import global configurations.
 include("tools/cmake/afr.cmake")
 
+# Add 3rdparty modules.
+add_subdirectory("modules/libraries/3rdparty")
+
 # -------------------------------------------------------------------------------------------------
 # Configure target board
 # -------------------------------------------------------------------------------------------------
