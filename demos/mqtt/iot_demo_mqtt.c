@@ -770,7 +770,7 @@ int RunMqttDemo( bool awsIotMqttMode,
 {
     /* Return value of this function and the exit status of this program. */
     int status = EXIT_SUCCESS;
-
+    printf(" ===== enter MQTT demo .....\n");
     /* Handle of the MQTT connection used in this demo. */
     IotMqttConnection_t mqttConnection = IOT_MQTT_CONNECTION_INITIALIZER;
 
