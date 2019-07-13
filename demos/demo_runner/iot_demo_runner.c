@@ -79,6 +79,7 @@ int DEMO_entryFUNCTION( bool awsIotMqttMode,
  */
 void DEMO_RUNNER_RunDemos( void )
 {
+	printf("demo entry func -> %ld", (void*)DEMO_entryFUNCTION);
     /* These demos are shared with the C SDK and perform their own initialization and cleanup. */
     static demoContext_t mqttDemoContext =
     {
