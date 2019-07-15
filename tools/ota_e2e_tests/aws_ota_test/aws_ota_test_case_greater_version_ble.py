@@ -58,3 +58,4 @@ class OtaTestGreaterVersionBle( OtaTestCase ):
         flashReturnCode = self._flashComm.flashAndRead()
 
         return buildReturnCode + flashReturnCode
+
