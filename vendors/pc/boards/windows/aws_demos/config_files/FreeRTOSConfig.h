@@ -183,7 +183,7 @@ extern void vLoggingPrintf( const char * pcFormat,
 #define configMAC_ADDR2                      0x22
 #define configMAC_ADDR3                      0x33
 #define configMAC_ADDR4                      0x44
-#define configMAC_ADDR5                      0x21
+#define configMAC_ADDR5                      0x23
 
 /* Default IP address configuration.  Used in ipconfigUSE_DHCP is set to 0, or
  * ipconfigUSE_DHCP is set to 1 but a DNS server cannot be contacted. */
