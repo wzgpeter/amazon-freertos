@@ -476,6 +476,8 @@ typedef struct _httpsRequest
 static const char* _pHttpsMethodStrings[] = {
     "GET",
     "HEAD",
+    "PUT",
+    "POST"
 };
 
 #endif /* IOT_HTTPS_INTERNAL_H_ */
