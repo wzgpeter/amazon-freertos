@@ -1659,6 +1659,8 @@ TEST( HTTPS_Client_Unit_Sync, SendSyncHeadersEndsWithSpaceAfterHeaderValue )
     IotTest_Free(pUserBufferWithHeaderSpaceUpToSpaceInBetweenValue);
 }
 
+/*-----------------------------------------------------------*/
+
 /**
  * @brief Test receiving a chunked HTTP response message.
  */

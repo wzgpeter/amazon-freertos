@@ -158,7 +158,7 @@
  * @brief HTTP standard header field "Range".
  */
 #define RANGE_HEADER_FIELD          "Range"
-#define RANGE_HEADER_FIELD_LENGTH   5
+#define RANGE_HEADER_FIELD_LENGTH   ( 5 )
 
 /**
  * @brief HTTP standard header field "Content-Range"

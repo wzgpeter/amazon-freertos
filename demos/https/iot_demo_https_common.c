@@ -57,7 +57,7 @@
  * @brief HTTP standard header field "Range".
  */
 #define RANGE_HEADER_FIELD          "Range"
-#define RANGE_HEADER_FIELD_LENGTH   5
+#define RANGE_HEADER_FIELD_LENGTH   ( 5 )
 
 /**
  * @brief HTTP standard header value for requesting a range of bytes from 0 to 0.
@@ -66,13 +66,13 @@
  * signature in an Authorization header field. We work around this by performing a GET on Range: bytes=0-0. Then 
  * extracting the size of the file from the Content-Range header field in the response. */
 #define RANGE_0_TO_0_HEADER_VALUE           "bytes=0-0"
-#define RANGE_0_TO_0_HEADER_VALUE_LENGTH    9
+#define RANGE_0_TO_0_HEADER_VALUE_LENGTH    ( 9 )
 
 /**
  * @brief HTTP standard header field "Content-Range"
  */
 #define CONTENT_RANGE_HEADER_FIELD          "Content-Range"
-#define CONTENT_RANGE_HEADER_FIELD_LENGTH   13
+#define CONTENT_RANGE_HEADER_FIELD_LENGTH   ( 13 )
 
 /*-----------------------------------------------------------*/
 
