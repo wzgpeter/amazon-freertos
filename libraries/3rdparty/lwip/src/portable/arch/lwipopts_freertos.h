@@ -348,4 +348,13 @@
     #define errno FreeRTOS_errno
 #endif
 
+
+/*
+   ----------------------------------------------
+   ---------- Sequential layer options ----------
+   ----------------------------------------------
+*/
+#define LWIP_NETCONN_SEM_PER_THREAD     1
+#define LWIP_NETCONN_FULLDUPLEX         1
+
 #endif /* __LWIPOPTS_FREERTOS_H__ */
