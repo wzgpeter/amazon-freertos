@@ -266,11 +266,10 @@ static inline IotHttpsRequestHandle_t _getReqHandle( IotHttpsRequestInfo_t* pReq
  * @brief Get a valid response handle using _pRespUserBuffer, and respInfoGET.
  */
 static inline IotHttpsResponseHandle_t _getRespHandle( IotHttpsResponseInfo_t* pRespInfo, 
-                                                       bool isAsync, 
-                                                       IotHttpsMethod_t method )
+                                                       IotHttpsRequestHandle_t reqHandle )
 {
     IotHttpsResponseHandle_t respHandle = IOT_HTTPS_RESPONSE_HANDLE_INITIALIZER;
-    IotTestHttps_initializeResponse(&respHandle, pRespInfo, isAsync, method);
+    IotTestHttps_initializeResponse(&respHandle, pRespInfo, reqHandle);
     return respHandle;
 }
 

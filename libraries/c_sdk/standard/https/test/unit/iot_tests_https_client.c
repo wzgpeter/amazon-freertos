@@ -413,6 +413,7 @@ TEST( HTTPS_Client_Unit_API, ConnectFailure)
     IotHttpsReturnCode_t returnCode = IOT_HTTPS_OK;
     IotHttpsConnectionHandle_t connHandle = IOT_HTTPS_CONNECTION_HANDLE_INITIALIZER;
     IotHttpsRequestHandle_t reqHandle = IOT_HTTPS_REQUEST_HANDLE_INITIALIZER;
+    IotHttpsResponseHandle_t respHandle = IOT_HTTPS_RESPONSE_HANDLE_INITIALIZER;
 
     /* Test that we receive an internal error when setReceiveCallback() returns failure. */
     _networkInterface.create = _networkCreateSuccess;
@@ -435,17 +436,18 @@ TEST( HTTPS_Client_Unit_API, ConnectFailure)
     /* Test we receive an error if the connection handle is valid and connected but disconnect fails. */
 
     /* Get a valid connection handle and put a failure condition (a request in the process of sending). */
-    connHandle = _getConnHandle();
-    TEST_ASSERT_NOT_NULL(connHandle);
-    reqHandle = _getReqHandle( &_reqInfo );
-    TEST_ASSERT_NOT_NULL(reqHandle);
-    reqHandle->reqFinishedSending = false;
-    IotDeQueue_EnqueueTail(&(connHandle->reqQ), &(reqHandle->link));
-
     _networkInterface.create = _networkCreateSuccess;
     _networkInterface.setReceiveCallback = _setReceiveCallbackSuccess;
     _networkInterface.close = _networkCloseSuccess;
     _networkInterface.destroy = _networkDestroySuccess;
+    connHandle = _getConnHandle();
+    TEST_ASSERT_NOT_NULL( connHandle );
+    reqHandle = _getReqHandle( &_reqInfo );
+    TEST_ASSERT_NOT_NULL( reqHandle );
+    respHandle = _getRespHandle( &_respInfo, reqHandle );
+    TEST_ASSERT_NOT_NULL( respHandle );
+    respHandle->reqFinishedSending = false;
+    IotDeQueue_EnqueueTail( &( connHandle->respQ ), &( respHandle->link ) );
     returnCode = IotHttpsClient_Connect(&connHandle, &_connInfo);
     TEST_ASSERT_NOT_EQUAL(IOT_HTTPS_OK, returnCode);
     TEST_ASSERT_NULL(connHandle);
@@ -504,6 +506,7 @@ TEST( HTTPS_Client_Unit_API, DisconnectFailure )
     IotHttpsReturnCode_t returnCode = IOT_HTTPS_OK;
     IotHttpsConnectionHandle_t connHandle = IOT_HTTPS_CONNECTION_HANDLE_INITIALIZER;
     IotHttpsRequestHandle_t reqHandle = IOT_HTTPS_REQUEST_HANDLE_INITIALIZER;
+    IotHttpsResponseHandle_t respHandle = IOT_HTTPS_RESPONSE_HANDLE_INITIALIZER;
 
     /* Test a network close failure. */
     _networkInterface.close = _networkCloseFail;
@@ -532,8 +535,10 @@ TEST( HTTPS_Client_Unit_API, DisconnectFailure )
     TEST_ASSERT_NOT_NULL(connHandle);
     reqHandle = _getReqHandle( &_reqInfo );
     TEST_ASSERT_NOT_NULL(reqHandle);
-    reqHandle->reqFinishedSending = false;
-    IotDeQueue_EnqueueTail(&(connHandle->reqQ), &(reqHandle->link));
+    respHandle = _getRespHandle( &_respInfo, reqHandle );
+    TEST_ASSERT_NOT_NULL( respHandle );
+    respHandle->reqFinishedSending = false;
+    IotDeQueue_EnqueueTail(&(connHandle->respQ), &(respHandle->link));
     returnCode = IotHttpsClient_Disconnect(connHandle);
     TEST_ASSERT_EQUAL(IOT_HTTPS_BUSY, returnCode);
     TEST_ASSERT_FALSE(connHandle->isConnected);
@@ -549,6 +554,7 @@ TEST( HTTPS_Client_Unit_API, DisconnectSuccess )
     IotHttpsReturnCode_t returnCode = IOT_HTTPS_OK;
     IotHttpsConnectionHandle_t connHandle = IOT_HTTPS_CONNECTION_HANDLE_INITIALIZER;
     IotHttpsRequestHandle_t reqHandle = IOT_HTTPS_REQUEST_HANDLE_INITIALIZER;
+    IotHttpsResponseHandle_t respHandle = IOT_HTTPS_RESPONSE_HANDLE_INITIALIZER;
  
     /* Test a successful disconnect when there are no items in the request queue. */
     _networkInterface.close = _networkCloseSuccess;
@@ -568,8 +574,10 @@ TEST( HTTPS_Client_Unit_API, DisconnectSuccess )
     TEST_ASSERT_NOT_NULL( connHandle );
     reqHandle = _getReqHandle( &_reqInfo );
     TEST_ASSERT_NOT_NULL( reqHandle );
-    reqHandle->reqFinishedSending = true;
-    IotDeQueue_EnqueueTail( &( connHandle->reqQ ), &( reqHandle->link ) );
+    respHandle = _getRespHandle( &_respInfo, reqHandle );
+    TEST_ASSERT_NOT_NULL( respHandle );
+    respHandle->reqFinishedSending = true;
+    IotDeQueue_EnqueueTail( &( connHandle->respQ ), &( respHandle->link ) );
 
     returnCode = IotHttpsClient_Disconnect( connHandle );
     TEST_ASSERT_EQUAL( IOT_HTTPS_OK, returnCode );
@@ -837,10 +845,13 @@ TEST( HTTPS_Client_Unit_API, ReadHeaderInvalidParameters)
 {
     IotHttpsReturnCode_t returnCode = IOT_HTTPS_OK;
     IotHttpsResponseHandle_t respHandle = IOT_HTTPS_RESPONSE_HANDLE_INITIALIZER;
+    IotHttpsRequestHandle_t reqHandle = IOT_HTTPS_REQUEST_HANDLE_INITIALIZER;
     char valueBuffer[HTTPS_TEST_VALUE_BUFFER_LENGTH_LARGE_ENOUGH] = { 0 };
 
     /* Get valid respHandle to correctly test other parameters as NULL. */
-    respHandle = _getRespHandle( &_respInfo, _reqInfo.isAsync, _reqInfo.method );
+    reqHandle = _getReqHandle( &_reqInfo );
+    TEST_ASSERT_NOT_NULL(reqHandle);
+    respHandle = _getRespHandle( &_respInfo, reqHandle );
     TEST_ASSERT_NOT_NULL(respHandle);
 
     /* Test a NULL response handle. */
@@ -869,6 +880,7 @@ TEST( HTTPS_Client_Unit_API, ReadHeaderVaryingValues )
 {
     IotHttpsReturnCode_t returnCode = IOT_HTTPS_OK;
     IotHttpsResponseHandle_t respHandle = IOT_HTTPS_RESPONSE_HANDLE_INITIALIZER;
+    IotHttpsRequestHandle_t reqHandle = IOT_HTTPS_REQUEST_HANDLE_INITIALIZER;
     size_t testHeadersLen = HTTPS_TEST_RESPONSE_HEADER_LINES_LENGTH;
     size_t headersBufferLen = 0;
     size_t copyLen = 0;
@@ -879,7 +891,9 @@ TEST( HTTPS_Client_Unit_API, ReadHeaderVaryingValues )
     size_t pTestPartialHeadersLen = (size_t)(pTestPartialHeadersEnd - pTestPartialHeadersStart);
 
     /* Create a response handle. */
-    respHandle = _getRespHandle( &_respInfo, _reqInfo.isAsync, _reqInfo.method );
+    reqHandle = _getReqHandle( &_reqInfo );
+    TEST_ASSERT_NOT_NULL(reqHandle);
+    respHandle = _getRespHandle( &_respInfo, reqHandle );
     TEST_ASSERT_NOT_NULL(respHandle);
     headersBufferLen = respHandle->pHeadersEnd - respHandle->pHeadersCur;
     /* Fill in with some header data. */
@@ -923,14 +937,14 @@ TEST( HTTPS_Client_Unit_API, ReadHeaderVaryingValues )
 
     /* Test looking for a header value when there are no headers available. */
     /* Get a fresh response handle. */
-    respHandle = _getRespHandle( &_respInfo, _reqInfo.isAsync, _reqInfo.method );
+    respHandle = _getRespHandle( &_respInfo, reqHandle );
     TEST_ASSERT_NOT_NULL(respHandle);
     returnCode = IotHttpsClient_ReadHeader(respHandle, HTTPS_DATE_HEADER, FAST_MACRO_STRLEN(HTTPS_DATE_HEADER), valueBufferLargeEnough, sizeof(valueBufferLargeEnough));
     TEST_ASSERT_EQUAL(IOT_HTTPS_NOT_FOUND, returnCode);
 
     /* Test reading a header when the value is not available. In this test we have a Date header field, but it ends
        at that header field. */
-    respHandle = _getRespHandle( &_respInfo, _reqInfo.isAsync, _reqInfo.method );
+    respHandle = _getRespHandle( &_respInfo, reqHandle );
     TEST_ASSERT_NOT_NULL(respHandle);
     memcpy(respHandle->pHeadersCur, pTestPartialHeadersStart, pTestPartialHeadersLen);
     respHandle->pHeadersCur += pTestPartialHeadersLen;
@@ -947,10 +961,13 @@ TEST( HTTPS_Client_Unit_API, ReadContentLengthInvalidParameters )
 {
     IotHttpsReturnCode_t returnCode = IOT_HTTPS_OK;
     IotHttpsResponseHandle_t respHandle = IOT_HTTPS_RESPONSE_HANDLE_INITIALIZER;
+    IotHttpsRequestHandle_t reqHandle = IOT_HTTPS_REQUEST_HANDLE_INITIALIZER;
     uint32_t contentLength = 0;
 
     /* Get valid respHandle to correctly test other parameters as NULL. */
-    respHandle = _getRespHandle( &_respInfo, _reqInfo.isAsync, _reqInfo.method );
+    reqHandle = _getReqHandle( &_reqInfo );
+    TEST_ASSERT_NOT_NULL(reqHandle);
+    respHandle = _getRespHandle( &_respInfo, reqHandle );
     TEST_ASSERT_NOT_NULL(respHandle);
 
     /* Test a NULL response handle. */
@@ -962,7 +979,7 @@ TEST( HTTPS_Client_Unit_API, ReadContentLengthInvalidParameters )
     TEST_ASSERT_EQUAL(IOT_HTTPS_INVALID_PARAMETER, returnCode);
 
     /* Test that the contentLength is not found on respond handle with an empty header. */
-    respHandle = _getRespHandle( &_respInfo, _reqInfo.isAsync, _reqInfo.method );
+    respHandle = _getRespHandle( &_respInfo, reqHandle );
     TEST_ASSERT_NOT_NULL( respHandle );
     returnCode = IotHttpsClient_ReadContentLength(respHandle, &contentLength);
     TEST_ASSERT_EQUAL(IOT_HTTPS_NOT_FOUND, returnCode);
@@ -977,12 +994,15 @@ TEST( HTTPS_Client_Unit_API, ReadContentLengthSuccess )
 {
     IotHttpsReturnCode_t returnCode = IOT_HTTPS_OK;
     IotHttpsResponseHandle_t respHandle = IOT_HTTPS_RESPONSE_HANDLE_INITIALIZER;
+    IotHttpsRequestHandle_t reqHandle = IOT_HTTPS_REQUEST_HANDLE_INITIALIZER;
     uint32_t contentLength = 0;
     size_t headersBufferLen = 0;
     size_t copyLen = 0;
 
     /* Create a response handle. */
-    respHandle = _getRespHandle( &_respInfo, _reqInfo.isAsync, _reqInfo.method );
+    reqHandle = _getReqHandle( &_reqInfo );
+    TEST_ASSERT_NOT_NULL(reqHandle);
+    respHandle = _getRespHandle( &_respInfo, reqHandle );
     TEST_ASSERT_NOT_NULL(respHandle);
     headersBufferLen = respHandle->pHeadersEnd - respHandle->pHeadersCur;
     /* Fill in with some header data. */
@@ -1011,12 +1031,15 @@ TEST( HTTPS_Client_Unit_API, ReadContentLengthNotFound )
 {
     IotHttpsReturnCode_t returnCode = IOT_HTTPS_OK;
     IotHttpsResponseHandle_t respHandle = IOT_HTTPS_RESPONSE_HANDLE_INITIALIZER;
+    IotHttpsRequestHandle_t reqHandle = IOT_HTTPS_REQUEST_HANDLE_INITIALIZER;
     uint32_t contentLength = 0;
     size_t headersBufferLen = 0;
     size_t copyLen = 0;
 
     /* Create a response handle. */
-    respHandle = _getRespHandle( &_respInfo, _reqInfo.isAsync, _reqInfo.method );
+    reqHandle = _getReqHandle( &_reqInfo );
+    TEST_ASSERT_NOT_NULL(reqHandle);
+    respHandle = _getRespHandle( &_respInfo, reqHandle );
     TEST_ASSERT_NOT_NULL(respHandle);
     headersBufferLen = respHandle->pHeadersEnd - respHandle->pHeadersCur;
     /* Fill in with some header data. */
@@ -1045,10 +1068,13 @@ TEST( HTTPS_Client_Unit_API, ReadResponseStatusInvalidParameters )
 {
     IotHttpsReturnCode_t returnCode = IOT_HTTPS_OK;
     IotHttpsResponseHandle_t respHandle = IOT_HTTPS_RESPONSE_HANDLE_INITIALIZER;
+    IotHttpsRequestHandle_t reqHandle = IOT_HTTPS_REQUEST_HANDLE_INITIALIZER;
     uint16_t responseStatus = 0;
 
     /* Get valid respHandle to correctly test other parameters as NULL. */
-    respHandle = _getRespHandle( &_respInfo, _reqInfo.isAsync, _reqInfo.method );
+    reqHandle = _getReqHandle( &_reqInfo );
+    TEST_ASSERT_NOT_NULL(reqHandle);
+    respHandle = _getRespHandle( &_respInfo, reqHandle );
     TEST_ASSERT_NOT_NULL(respHandle);
 
     /* Test a NULL response handle. */
@@ -1060,7 +1086,7 @@ TEST( HTTPS_Client_Unit_API, ReadResponseStatusInvalidParameters )
     TEST_ASSERT_EQUAL(IOT_HTTPS_INVALID_PARAMETER, returnCode);
 
     /* Test that the contentLength is not found, when it is equal to zero. */
-    respHandle = _getRespHandle( &_respInfo, _reqInfo.isAsync, _reqInfo.method );
+    respHandle = _getRespHandle( &_respInfo, reqHandle );
     TEST_ASSERT_NOT_NULL( respHandle );
     respHandle->status = 0;
     returnCode = IotHttpsClient_ReadResponseStatus(respHandle, &responseStatus);
@@ -1076,12 +1102,15 @@ TEST( HTTPS_Client_Unit_API, ReadResponseStatusSuccess )
 {
     IotHttpsReturnCode_t returnCode = IOT_HTTPS_OK;
     IotHttpsResponseHandle_t respHandle = IOT_HTTPS_RESPONSE_HANDLE_INITIALIZER;
+    IotHttpsRequestHandle_t reqHandle = IOT_HTTPS_REQUEST_HANDLE_INITIALIZER;
     uint16_t responseStatus = 0;
     uint16_t testValidResponseStatus = (uint16_t)IOT_HTTPS_STATUS_OK;
 
     /* Test that if the content-length of greater than zero is inside of the structure then it is returned 
        with the API. */
-    respHandle = _getRespHandle( &_respInfo, _reqInfo.isAsync, _reqInfo.method );
+    reqHandle = _getReqHandle( &_reqInfo );
+    TEST_ASSERT_NOT_NULL(reqHandle);
+    respHandle = _getRespHandle( &_respInfo, reqHandle );
     TEST_ASSERT_NOT_NULL( respHandle );
     respHandle->status = testValidResponseStatus;
     returnCode = IotHttpsClient_ReadResponseStatus(respHandle, &responseStatus);
@@ -1157,10 +1186,13 @@ TEST( HTTPS_Client_Unit_API, ReadResponseBodyInvalidParameters )
 {
     IotHttpsReturnCode_t returnCode = IOT_HTTPS_OK;
     IotHttpsResponseHandle_t respHandle = IOT_HTTPS_RESPONSE_HANDLE_INITIALIZER;
+    IotHttpsRequestHandle_t reqHandle = IOT_HTTPS_REQUEST_HANDLE_INITIALIZER;
     uint32_t bodyLength = sizeof(_pRespBodyBuffer);
     
     /* Get valid response handle to use for subsequent testing. */
-    respHandle = _getRespHandle(&_respInfo, _reqInfo.isAsync, _reqInfo.method);
+    reqHandle = _getReqHandle( &_reqInfo );
+    TEST_ASSERT_NOT_NULL(reqHandle);
+    respHandle = _getRespHandle(&_respInfo, reqHandle);
     TEST_ASSERT_NOT_NULL(respHandle);
 
     /* Test a NULL response handle. */
@@ -1191,13 +1223,16 @@ TEST( HTTPS_Client_Unit_API, ReadResponseBodyNetworkReceiveFailure )
     IotHttpsReturnCode_t returnCode;
     IotHttpsResponseHandle_t respHandle = IOT_HTTPS_RESPONSE_HANDLE_INITIALIZER;
     IotHttpsConnectionHandle_t connHandle = IOT_HTTPS_CONNECTION_HANDLE_INITIALIZER;
+    IotHttpsRequestHandle_t reqHandle = IOT_HTTPS_REQUEST_HANDLE_INITIALIZER;
     uint32_t bodyLength = sizeof( _pRespBodyBuffer );
     
     /* Set the network receive function to return a failure. */
     _networkInterface.receive = _networkReceiveFail;
 
     /* Get valid response an connection handles to perform this single operation. */
-    respHandle = _getRespHandle(&_respInfo, _reqInfo.isAsync, _reqInfo.method);
+    reqHandle = _getReqHandle( &_reqInfo );
+    TEST_ASSERT_NOT_NULL(reqHandle);
+    respHandle = _getRespHandle(&_respInfo, reqHandle);
     TEST_ASSERT_NOT_NULL(respHandle);
     connHandle = _getConnHandle();
     TEST_ASSERT_NOT_NULL(connHandle);
@@ -1221,13 +1256,16 @@ TEST( HTTPS_Client_Unit_API, ReadResponseBodyParsingFailure )
     IotHttpsReturnCode_t returnCode;
     IotHttpsResponseHandle_t respHandle = IOT_HTTPS_RESPONSE_HANDLE_INITIALIZER;
     IotHttpsConnectionHandle_t connHandle = IOT_HTTPS_CONNECTION_HANDLE_INITIALIZER;
+    IotHttpsRequestHandle_t reqHandle = IOT_HTTPS_REQUEST_HANDLE_INITIALIZER;
     uint32_t bodyLength = sizeof( _pRespBodyBuffer );
     
     /* Set the network receive function to return a succeed. */
     _networkInterface.receive = _networkReceiveSuccess;
 
     /* Get valid response and connection handles to perform this single operation. */
-    respHandle = _getRespHandle(&_respInfo, _reqInfo.isAsync, _reqInfo.method);
+    reqHandle = _getReqHandle( &_reqInfo );
+    TEST_ASSERT_NOT_NULL(reqHandle);
+    respHandle = _getRespHandle(&_respInfo, reqHandle);
     TEST_ASSERT_NOT_NULL(respHandle);
     connHandle = _getConnHandle();
     TEST_ASSERT_NOT_NULL(connHandle);
@@ -1253,13 +1291,16 @@ TEST( HTTPS_Client_Unit_API, ReadResponseBodySuccess )
     IotHttpsReturnCode_t returnCode;
     IotHttpsResponseHandle_t respHandle = IOT_HTTPS_RESPONSE_HANDLE_INITIALIZER;
     IotHttpsConnectionHandle_t connHandle = IOT_HTTPS_CONNECTION_HANDLE_INITIALIZER;
+    IotHttpsRequestHandle_t reqHandle = IOT_HTTPS_REQUEST_HANDLE_INITIALIZER;
     uint32_t bodyLength = sizeof( _pRespBodyBuffer );
 
     /* Set the network receive function to return a succeed. */
     _networkInterface.receive = _networkReceiveSuccess;
 
     /* Get valid response and connection handles to perform this single operation. */
-    respHandle = _getRespHandle( &_respInfo, _reqInfo.isAsync, _reqInfo.method );
+    reqHandle = _getReqHandle( &_reqInfo );
+    TEST_ASSERT_NOT_NULL(reqHandle);
+    respHandle = _getRespHandle( &_respInfo, reqHandle );
     TEST_ASSERT_NOT_NULL( respHandle );
     connHandle = _getConnHandle();
     TEST_ASSERT_NOT_NULL( connHandle );
