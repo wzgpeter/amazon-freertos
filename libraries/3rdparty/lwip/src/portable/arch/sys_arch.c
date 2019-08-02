@@ -492,6 +492,11 @@ sys_arch_netconn_sem_get(void)
   LWIP_ASSERT("task != NULL", task != NULL);
 
   ret = pvTaskGetThreadLocalStoragePointer(task, 0);
+  if (ret == NULL) {
+    sys_arch_netconn_sem_alloc();
+    ret = pvTaskGetThreadLocalStoragePointer(task, 0);
+  }
+  LWIP_ASSERT("pvTaskGetThreadLocalStoragePointer != NULL", ret != NULL);
   return ret;
 }
 
